@@ -1,24 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LayoutDashboard, List, LogOut } from "lucide-react";
+import { ChevronDown, LayoutDashboard, List, LogOut, Settings } from "lucide-react";
 import { App } from "./app";
 import { useAuth } from "./components/auth-guard";
 import { Button } from "./components/ui/button";
+import { Tooltip } from "./components/ui/tooltip";
 import { cn } from "./lib/utils";
 import { HomePage } from "./pages/home-page";
+import { SettingsPage } from "./pages/settings-page";
 
-type PageKey = "home" | "workspace";
+type PageKey = "home" | "workspace" | "settings";
 
 const pageLabel: Record<PageKey, string> = {
   home: "Kezdőlap",
   workspace: "Komplex nézet",
+  settings: "Beállítások",
 };
 
 const pageIcon: Record<PageKey, typeof List> = {
   home: List,
   workspace: LayoutDashboard,
+  settings: Settings,
 };
 
-const pages: PageKey[] = ["home", "workspace"];
+const navPages: PageKey[] = ["home", "workspace"];
 
 function NavMenu({
   current,
@@ -41,7 +45,9 @@ function NavMenu({
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  const CurrentIcon = pageIcon[current];
+  const CurrentIcon = pageIcon[current] ?? List;
+  const displayLabel = current === "settings" ? "Kezdőlap" : pageLabel[current];
+  const DisplayIcon = current === "settings" ? List : CurrentIcon;
 
   return (
     <div ref={ref} className="relative">
@@ -50,23 +56,20 @@ function NavMenu({
         onClick={() => setOpen((v) => !v)}
         className="flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium hover:bg-accent transition-colors"
       >
-        <CurrentIcon className="h-4 w-4 text-muted-foreground" />
-        {pageLabel[current]}
+        <DisplayIcon className="h-4 w-4 text-muted-foreground" />
+        {displayLabel}
         <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", open && "rotate-180")} />
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-50 mt-1 min-w-[180px] rounded-md border border-border bg-popover shadow-md">
-          {pages.map((page) => {
+        <div className="absolute left-0 top-full z-50 mt-1 min-w-[180px] rounded-md border border-border bg-card shadow-md">
+          {navPages.map((page) => {
             const Icon = pageIcon[page];
             return (
               <button
                 key={page}
                 type="button"
-                onClick={() => {
-                  onChange(page);
-                  setOpen(false);
-                }}
+                onClick={() => { onChange(page); setOpen(false); }}
                 className={cn(
                   "flex w-full items-center gap-2.5 px-3 py-2 text-sm hover:bg-accent transition-colors first:rounded-t-md last:rounded-b-md",
                   page === current && "bg-accent font-medium",
@@ -101,6 +104,20 @@ export function Shell() {
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground hidden sm:inline">{user.name}</span>
+
+            {user.isAdmin && (
+              <Tooltip text="Rendszerbeállítások">
+                <Button
+                  variant={page === "settings" ? "secondary" : "ghost"}
+                  size="sm"
+                  onClick={() => setPage(page === "settings" ? "home" : "settings")}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="sr-only">Beállítások</span>
+                </Button>
+              </Tooltip>
+            )}
+
             <Button
               variant="ghost"
               size="sm"
@@ -117,6 +134,7 @@ export function Shell() {
       <main className="flex flex-1 flex-col overflow-auto">
         {page === "home" && <HomePage />}
         {page === "workspace" && <App />}
+        {page === "settings" && <SettingsPage />}
       </main>
     </div>
   );

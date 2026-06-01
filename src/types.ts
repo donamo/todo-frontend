@@ -87,6 +87,15 @@ export type AIStatusReport = {
   ready: boolean;
 };
 
+export type AppUser = {
+  id: string;
+  email: string;
+  name: string;
+  approved: boolean;
+  isAdmin: boolean;
+  createdAt: string;
+};
+
 export type AIProposalParentType = "EPIC" | "PROJECT";
 export type AIProposalStatus = "DRAFT" | "APPLIED";
 

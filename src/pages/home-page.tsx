@@ -33,8 +33,10 @@ import {
   Pencil,
   Sparkles,
   Star,
+  Trash2,
 } from "lucide-react";
 import { AIProposalDialog } from "../components/ai-proposal-dialog";
+import { DeleteDialog, type DeleteTarget } from "../components/delete-dialog";
 import { Tooltip } from "../components/ui/tooltip";
 import {
   CreateEpicDialog,
@@ -133,7 +135,7 @@ type ActiveItem =
 
 // ─── TodoRow ──────────────────────────────────────────────────────────────────
 
-function TodoContent({ todo, isDragging, onEdit }: { todo: Todo; isDragging?: boolean; onEdit?: () => void }) {
+function TodoContent({ todo, isDragging, onEdit, onDelete }: { todo: Todo; isDragging?: boolean; onEdit?: () => void; onDelete?: () => void }) {
   return (
     <div
       className={cn(
@@ -184,12 +186,23 @@ function TodoContent({ todo, isDragging, onEdit }: { todo: Todo; isDragging?: bo
             </button>
           </Tooltip>
         )}
+        {onDelete && !isDragging && (
+          <Tooltip text="Törlés">
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="rounded border border-border/20 p-0.5 text-muted-foreground/30 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-500"
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </Tooltip>
+        )}
       </span>
     </div>
   );
 }
 
-function SortableTodoRow({ todo, onEdit }: { todo: Todo; onEdit?: () => void }) {
+function SortableTodoRow({ todo, onEdit, onDelete }: { todo: Todo; onEdit?: () => void; onDelete?: () => void }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: tid(todo.id),
     data: { kind: "todo", item: todo },
@@ -203,7 +216,7 @@ function SortableTodoRow({ todo, onEdit }: { todo: Todo; onEdit?: () => void }) 
       {...listeners}
       className={cn(isDragging && "opacity-40")}
     >
-      <TodoContent todo={todo} onEdit={onEdit} />
+      <TodoContent todo={todo} onEdit={onEdit} onDelete={onDelete} />
     </div>
   );
 }
@@ -230,13 +243,17 @@ function SortableStageSection({
   todos,
   onCreateTodo,
   onEdit,
+  onDelete,
   onEditTodo,
+  onDeleteTodo,
 }: {
   stage: Stage;
   todos: Todo[];
   onCreateTodo: () => void;
   onEdit: () => void;
+  onDelete: () => void;
   onEditTodo: (todo: Todo) => void;
+  onDeleteTodo: (todo: Todo) => void;
 }) {
   const [open, setOpen] = useState(true);
   const done = todos.filter((t) => t.status === "DONE").length;
@@ -309,13 +326,22 @@ function SortableStageSection({
             <Pencil className="h-3 w-3" />
           </button>
         </Tooltip>
+        <Tooltip text="Stage törlése">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="rounded border border-border/20 p-1 text-muted-foreground/40 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-500"
+          >
+            <Trash2 className="h-3 w-3" />
+          </button>
+        </Tooltip>
       </div>
 
       {open && (
         <div className="ml-4 mt-0.5 border-l border-border/30 pl-1">
           <SortableContext items={todoIds} strategy={verticalListSortingStrategy}>
             {todos.map((todo) => (
-              <SortableTodoRow key={todo.id} todo={todo} onEdit={() => onEditTodo(todo)} />
+              <SortableTodoRow key={todo.id} todo={todo} onEdit={() => onEditTodo(todo)} onDelete={() => onDeleteTodo(todo)} />
             ))}
           </SortableContext>
           {todos.length === 0 && <DroppableEmptyZone id={containerId} />}
@@ -337,9 +363,12 @@ function SortableProjectRow({
   onCreateStage,
   onCreateTodo,
   onEdit,
+  onDelete,
   onAI,
   onEditStage,
+  onDeleteStage,
   onEditTodo,
+  onDeleteTodo,
 }: {
   project: Project;
   todos: Todo[];
@@ -348,9 +377,12 @@ function SortableProjectRow({
   onCreateStage: () => void;
   onCreateTodo: (stageId?: string | null) => void;
   onEdit: () => void;
+  onDelete: () => void;
   onAI: () => void;
   onEditStage: (stage: Stage) => void;
+  onDeleteStage: (stage: Stage) => void;
   onEditTodo: (todo: Todo) => void;
+  onDeleteTodo: (todo: Todo) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -456,6 +488,15 @@ function SortableProjectRow({
             <Pencil className="h-3.5 w-3.5" />
           </button>
         </Tooltip>
+        <Tooltip text="Project törlése">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="rounded border border-border/20 p-1 text-muted-foreground/40 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-500"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </Tooltip>
       </div>
 
       {open && (
@@ -474,7 +515,9 @@ function SortableProjectRow({
                 todos={todos.filter((t) => t.stageId === stage.id)}
                 onCreateTodo={() => onCreateTodo(stage.id)}
                 onEdit={() => onEditStage(stage)}
+                onDelete={() => onDeleteStage(stage)}
                 onEditTodo={(todo) => onEditTodo(todo)}
+                onDeleteTodo={(todo) => onDeleteTodo(todo)}
               />
             ))}
           </SortableContext>
@@ -494,7 +537,7 @@ function SortableProjectRow({
                 strategy={verticalListSortingStrategy}
               >
                 {unstagedTodos.map((todo) => (
-                  <SortableTodoRow key={todo.id} todo={todo} onEdit={() => onEditTodo(todo)} />
+                  <SortableTodoRow key={todo.id} todo={todo} onEdit={() => onEditTodo(todo)} onDelete={() => onDeleteTodo(todo)} />
                 ))}
               </SortableContext>
             </div>
@@ -521,11 +564,15 @@ function SortableEpicSection({
   onCreateStage,
   onCreateTodo,
   onEdit,
+  onDelete,
   onAI,
   onEditProject,
+  onDeleteProject,
   onAIProject,
   onEditStage,
+  onDeleteStage,
   onEditTodo,
+  onDeleteTodo,
 }: {
   epic: Epic;
   projects: Project[];
@@ -536,11 +583,15 @@ function SortableEpicSection({
   onCreateStage: (projectId: string, projectName: string) => void;
   onCreateTodo: (projectId: string, stageId: string | null, projectName: string, stageName?: string) => void;
   onEdit: () => void;
+  onDelete: () => void;
   onAI: () => void;
   onEditProject: (project: Project) => void;
+  onDeleteProject: (project: Project) => void;
   onAIProject: (project: Project) => void;
   onEditStage: (stage: Stage) => void;
+  onDeleteStage: (stage: Stage) => void;
   onEditTodo: (todo: Todo) => void;
+  onDeleteTodo: (todo: Todo) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -620,9 +671,18 @@ function SortableEpicSection({
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
-            className="mr-3 rounded border border-border/20 p-1.5 text-muted-foreground/40 transition-colors hover:border-border/50 hover:bg-muted/50 hover:text-foreground"
+            className="rounded border border-border/20 p-1.5 text-muted-foreground/40 transition-colors hover:border-border/50 hover:bg-muted/50 hover:text-foreground"
           >
             <Pencil className="h-4 w-4" />
+          </button>
+        </Tooltip>
+        <Tooltip text="Epic törlése">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="mr-3 rounded border border-border/20 p-1.5 text-muted-foreground/40 transition-colors hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-500"
+          >
+            <Trash2 className="h-4 w-4" />
           </button>
         </Tooltip>
       </div>
@@ -643,9 +703,12 @@ function SortableEpicSection({
                   onCreateTodo(project.id, stageId ?? null, project.name, stageName);
                 }}
                 onEdit={() => onEditProject(project)}
+                onDelete={() => onDeleteProject(project)}
                 onAI={() => onAIProject(project)}
                 onEditStage={(stage) => onEditStage(stage)}
+                onDeleteStage={(stage) => onDeleteStage(stage)}
                 onEditTodo={(todo) => onEditTodo(todo)}
+                onDeleteTodo={(todo) => onDeleteTodo(todo)}
               />
             ))}
           </SortableContext>
@@ -718,6 +781,7 @@ export function HomePage() {
   const [stagesMap, setStagesMap] = useState<Record<string, Stage[]>>({});
   const [activeItem, setActiveItem] = useState<ActiveItem | null>(null);
   const [dialog, setDialog] = useState<DialogState>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
   const refetchWorkspace = useCallback(() => { void refetch(); }, [refetch]);
 
@@ -981,11 +1045,15 @@ export function HomePage() {
                     setDialog({ kind: "todo", projectId, stageId, projectName, stageName })
                   }
                   onEdit={() => setDialog({ kind: "edit-epic", item: epic })}
+                  onDelete={() => setDeleteTarget({ kind: "epic", item: epic })}
                   onAI={() => setDialog({ kind: "ai-epic", item: epic })}
                   onEditProject={(project) => setDialog({ kind: "edit-project", item: project })}
+                  onDeleteProject={(project) => setDeleteTarget({ kind: "project", item: project })}
                   onAIProject={(project) => setDialog({ kind: "ai-project", item: project })}
                   onEditStage={(stage) => setDialog({ kind: "edit-stage", item: stage })}
+                  onDeleteStage={(stage) => setDeleteTarget({ kind: "stage", item: stage })}
                   onEditTodo={(todo) => setDialog({ kind: "edit-todo", item: todo })}
+                  onDeleteTodo={(todo) => setDeleteTarget({ kind: "todo", item: todo })}
                 />
               ))}
             </SortableContext>
@@ -1015,9 +1083,12 @@ export function HomePage() {
                           setDialog({ kind: "todo", projectId: project.id, stageId: stageId ?? null, projectName: project.name, stageName });
                         }}
                         onEdit={() => setDialog({ kind: "edit-project", item: project })}
+                        onDelete={() => setDeleteTarget({ kind: "project", item: project })}
                         onAI={() => setDialog({ kind: "ai-project", item: project })}
                         onEditStage={(stage) => setDialog({ kind: "edit-stage", item: stage })}
+                        onDeleteStage={(stage) => setDeleteTarget({ kind: "stage", item: stage })}
                         onEditTodo={(todo) => setDialog({ kind: "edit-todo", item: todo })}
+                        onDeleteTodo={(todo) => setDeleteTarget({ kind: "todo", item: todo })}
                       />
                     ))}
                   </SortableContext>
@@ -1036,7 +1107,7 @@ export function HomePage() {
                     strategy={verticalListSortingStrategy}
                   >
                     {orphanTodos.map((todo) => (
-                      <SortableTodoRow key={todo.id} todo={todo} onEdit={() => setDialog({ kind: "edit-todo", item: todo })} />
+                      <SortableTodoRow key={todo.id} todo={todo} onEdit={() => setDialog({ kind: "edit-todo", item: todo })} onDelete={() => setDeleteTarget({ kind: "todo", item: todo })} />
                     ))}
                   </SortableContext>
                 </div>
@@ -1115,6 +1186,12 @@ export function HomePage() {
         todo={dialog?.kind === "edit-todo" ? dialog.item : null}
         onClose={() => setDialog(null)}
         onSuccess={() => { setDialog(null); refetchWorkspace(); }}
+      />
+
+      <DeleteDialog
+        target={deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onDeleted={() => { setDeleteTarget(null); refetchWorkspace(); }}
       />
 
       <AIProposalDialog

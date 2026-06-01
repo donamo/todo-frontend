@@ -4,6 +4,8 @@ export type User = {
   id: string;
   email: string;
   name: string;
+  approved?: boolean;
+  isAdmin?: boolean;
 };
 
 export async function fetchCurrentUser(): Promise<User | null> {

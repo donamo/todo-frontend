@@ -226,6 +226,46 @@ export const ADD_TODO_LABEL_MUTATION = gql`
   }
 `;
 
+export const DELETE_EPIC_MUTATION = gql`
+  mutation DeleteEpic($id: ID!, $keepChildren: Boolean) {
+    deleteEpic(id: $id, keepChildren: $keepChildren)
+  }
+`;
+
+export const DELETE_PROJECT_MUTATION = gql`
+  mutation DeleteProject($id: ID!, $keepChildren: Boolean) {
+    deleteProject(id: $id, keepChildren: $keepChildren)
+  }
+`;
+
+export const DELETE_STAGE_MUTATION = gql`
+  mutation DeleteStage($id: ID!, $keepChildren: Boolean) {
+    deleteStage(id: $id, keepChildren: $keepChildren)
+  }
+`;
+
+export const USERS_QUERY = gql`
+  query Users {
+    users {
+      id
+      email
+      name
+      approved
+      isAdmin
+      createdAt
+    }
+  }
+`;
+
+export const UPDATE_USER_MUTATION = gql`
+  mutation UpdateUser($id: ID!, $input: UpdateUserInput!) {
+    updateUser(id: $id, input: $input) {
+      id
+      approved
+    }
+  }
+`;
+
 export const CREATE_PROJECT_NOTE_MUTATION = gql`
   mutation CreateProjectNote($input: CreateProjectNoteInput!) {
     createProjectNote(input: $input) {
